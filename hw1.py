@@ -27,17 +27,16 @@ def better_tokenize(string):
         if char not in punctuations:
             no_punct = no_punct + char.lower()
     ls_words = no_punct.split()
-    return ls_words
+    common_words = open('./words/common-words.txt').read()
+    token_ls = [word for word in ls_words if word not in common_words]
+    return token_ls
 
 
 class TSV():
     """Organizing each row in the tsv file"""
     def __init__(self, row):
         self.ID = row[0]
-        try:
-            self.tweet = better_tokenize(row[1])
-        except:
-            pass
+        self.tweet = better_tokenize(row[1])
         try:
             self.classifer = row[2]
         except:
@@ -84,10 +83,12 @@ def classify(tweet, pH, pNotH, smoothing_alpha, testing = False):
     isNotHate = pNotH * conditionalTweet(tweet.tweet, False, smoothing_alpha)
     if isHate > isNotHate:
         cs = '1'
-        return (tweet.ID, cs)
+        if not testing:
+            return (tweet.ID, cs)
     else:
         cs = '0'
-        return (tweet.ID, cs)
+        if not testing:
+            return (tweet.ID, cs)
     if testing:
         if cs == tweet.classifer:
             result = 'match'
@@ -108,23 +109,15 @@ z2 = create_instances(o2)
 # o2 = opening('dev.tsv')
 # z2 = create_instances(o2)
 
-y_true = []
-y_pred = []
+# y_true = []
+# y_pred = []
 full_array = []
 for x2 in z2:
-    x = np.array(classify(x2, pH, pNotH, smoothing_alpha = 0.4))
+    x = np.array(classify(x2, pH, pNotH, smoothing_alpha = 0.9, testing = False))
     full_array.append(x)
     print(x)
-    # y_true.append(x[1])
-    # if x[2] == 'match':
-    #     y_pred.append(x[1])
-    # else:
-    #     if x[1] == '1':
-    #         y_pred.append(0)
-    #     else:
-    #         y_pred.append(1)
 
-### Writing the out.csv file that is used to upload to Kaggle
+### Writing the out.csv file that is used to upload to Kaggle.  Uncomment to write when using the test.unlabeled data
 with open('out.csv', 'w', newline = '') as results_csv:
     r_csv = csv.writer(results_csv, delimiter = ',')
     r_csv.writerow(["instance_id", "class"])
@@ -142,7 +135,7 @@ def plotting(r, inst):
     y_pred = []
     full_array = []
     for x2 in inst:
-        x = np.array(classify(x2, pH, pNotH, smoothing_alpha = r))
+        x = np.array(classify(x2, pH, pNotH, smoothing_alpha = r, testing = True))
         full_array.append(x)
         y_true.append(x[1])
         if x[2] == 'match':
@@ -152,48 +145,49 @@ def plotting(r, inst):
                 y_pred.append(0)
             else:
                 y_pred.append(1)
-    score = f1_score(y_true, y_pred, average = 'weighted')
+    score = f1_score(y_true, y_pred, average = 'micro')
     return(r, score)
 
-alpha1 = []
-sc1 = []
-for r in np.arange(0.1,0.21,0.01):
-    alpha1.append(plotting(r, z2)[0])
-    sc1.append(plotting(r, z2)[1])
-    print(plotting(r, z2))
-data = [go.Scatter(
-        x=alpha1,
-        y=sc1,
-        textposition = 'auto',
-        marker=dict(
-            color='rgb(255,140,0)',
-            line=dict(
-                color='rgb(8,48,107)',
-                width=1.5),
-        ),
-        opacity=0.8
-    )]
-layout = go.Layout(
-        title = 'F1 Score as Smoothing Alpha Increases',
-        xaxis=dict(
-            tickangle=45,
-            tickfont=dict(
-                size=10,
-                color='rgb(107, 107, 107)'
-            )
-        ),
-        yaxis=dict(
-            title='F1 Score',
-            titlefont=dict(
-                size=14,
-                color='rgb(107, 107, 107)'
-            ),
-            tickfont=dict(
-                size=12,
-                color='rgb(107, 107, 107)'
-            )
-        )
-    )
-print('opening...')
-fig = go.Figure(data = data, layout = layout)
-py.offline.plot(fig, filename="bayes_plot.html")
+### Uncomment the below, set classify to false, and comment out both returns before 'if testing:' to create a plot of finding best smoothing_alpha.
+# alpha1 = []
+# sc1 = []
+# for r in np.arange(0.1,1.01,0.01):
+#     alpha1.append(plotting(r, z2)[0])
+#     sc1.append(plotting(r, z2)[1])
+#     print(plotting(r, z2))
+# data = [go.Scatter(
+#         x=alpha1,
+#         y=sc1,
+#         textposition = 'auto',
+#         marker=dict(
+#             color='rgb(255,140,0)',
+#             line=dict(
+#                 color='rgb(8,48,107)',
+#                 width=1.5),
+#         ),
+#         opacity=0.8
+#     )]
+# layout = go.Layout(
+#         title = 'F1 Score as Smoothing Alpha Increases',
+#         xaxis=dict(
+#             tickangle=45,
+#             tickfont=dict(
+#                 size=10,
+#                 color='rgb(107, 107, 107)'
+#             )
+#         ),
+#         yaxis=dict(
+#             title='F1 Score',
+#             titlefont=dict(
+#                 size=14,
+#                 color='rgb(107, 107, 107)'
+#             ),
+#             tickfont=dict(
+#                 size=12,
+#                 color='rgb(107, 107, 107)'
+#             )
+#         )
+#     )
+# print('opening...')
+# fig = go.Figure(data = data, layout = layout)
+# py.offline.plot(fig, filename="bayes_plot.html")
