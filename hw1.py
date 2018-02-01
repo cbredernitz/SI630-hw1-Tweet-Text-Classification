@@ -21,16 +21,16 @@ def tokenize(string):
     return string.split()
 
 def better_tokenize(string):
+    new_string = [word for word in re.sub('[^\w]', ' ', string)]
     punctuations = '''!()-[]{};:'"\,<>./?@#$%^&*_~'''
     no_punct = ""
-    for char in string:
+    for char in new_string:
         if char not in punctuations:
             no_punct = no_punct + char.lower()
     ls_words = no_punct.split()
     common_words = open('./words/common-words.txt').read()
     token_ls = [word for word in ls_words if word not in common_words]
     return token_ls
-
 
 class TSV():
     """Organizing each row in the tsv file"""
@@ -109,11 +109,9 @@ z2 = create_instances(o2)
 # o2 = opening('dev.tsv')
 # z2 = create_instances(o2)
 
-# y_true = []
-# y_pred = []
 full_array = []
 for x2 in z2:
-    x = np.array(classify(x2, pH, pNotH, smoothing_alpha = 0.9, testing = False))
+    x = np.array(classify(x2, pH, pNotH, smoothing_alpha = 0.86, testing = False))
     full_array.append(x)
     print(x)
 
@@ -148,46 +146,49 @@ def plotting(r, inst):
     score = f1_score(y_true, y_pred, average = 'micro')
     return(r, score)
 
-### Uncomment the below, set classify to false, and comment out both returns before 'if testing:' to create a plot of finding best smoothing_alpha.
-# alpha1 = []
-# sc1 = []
-# for r in np.arange(0.1,1.01,0.01):
-#     alpha1.append(plotting(r, z2)[0])
-#     sc1.append(plotting(r, z2)[1])
-#     print(plotting(r, z2))
-# data = [go.Scatter(
-#         x=alpha1,
-#         y=sc1,
-#         textposition = 'auto',
-#         marker=dict(
-#             color='rgb(255,140,0)',
-#             line=dict(
-#                 color='rgb(8,48,107)',
-#                 width=1.5),
-#         ),
-#         opacity=0.8
-#     )]
-# layout = go.Layout(
-#         title = 'F1 Score as Smoothing Alpha Increases',
-#         xaxis=dict(
-#             tickangle=45,
-#             tickfont=dict(
-#                 size=10,
-#                 color='rgb(107, 107, 107)'
-#             )
-#         ),
-#         yaxis=dict(
-#             title='F1 Score',
-#             titlefont=dict(
-#                 size=14,
-#                 color='rgb(107, 107, 107)'
-#             ),
-#             tickfont=dict(
-#                 size=12,
-#                 color='rgb(107, 107, 107)'
-#             )
-#         )
-#     )
-# print('opening...')
-# fig = go.Figure(data = data, layout = layout)
-# py.offline.plot(fig, filename="bayes_plot.html")
+def plot():
+    alpha1 = []
+    sc1 = []
+    for r in np.arange(0.1,1.01,0.01):
+        alpha1.append(plotting(r, z2)[0])
+        sc1.append(plotting(r, z2)[1])
+        print(plotting(r, z2))
+    data = [go.Scatter(
+            x=alpha1,
+            y=sc1,
+            textposition = 'auto',
+            marker=dict(
+                color='rgb(255,140,0)',
+                line=dict(
+                    color='rgb(8,48,107)',
+                    width=1.5),
+            ),
+            opacity=0.8
+        )]
+    layout = go.Layout(
+            title = 'F1 Score as Smoothing Alpha Increases',
+            xaxis=dict(
+                tickangle=45,
+                tickfont=dict(
+                    size=10,
+                    color='rgb(107, 107, 107)'
+                )
+            ),
+            yaxis=dict(
+                title='F1 Score',
+                titlefont=dict(
+                    size=14,
+                    color='rgb(107, 107, 107)'
+                ),
+                tickfont=dict(
+                    size=12,
+                    color='rgb(107, 107, 107)'
+                )
+            )
+        )
+    print('opening...')
+    fig = go.Figure(data = data, layout = layout)
+    py.offline.plot(fig, filename="bayes_plot.html")
+
+### Uncomment the below to create a plot of smoothing_alpha and it's F1_score
+# plot()
